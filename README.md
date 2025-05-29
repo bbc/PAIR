@@ -1,5 +1,5 @@
 # BBC - PAIR (Paired Authentic and Inpainted References) Dataset
-🚧 This repository is a placeholder for the upcoming BBC- Paired Authentic and Inpainted Reference (BBC-PAIR) dataset. Stay tuned!
+🚧 This repository is a placeholder for the upcoming BBC - Paired Authentic and Inpainted References (BBC-PAIR) dataset. Stay tuned!
 
 # 🚀 Release Timeline
 The release for this dataset will follow a month or so behind successful paper acceptance 

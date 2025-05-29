@@ -1,5 +1,5 @@
-# BBC-TuringVision (BBC-TV) Dataset
-🚧 This repository is a placeholder for the upcoming BBC-TuringVision (BBC-TV) dataset. Stay tuned!
+# BBC - Paired Authentic and Inpainted References (BBC-PAIR) Dataset
+🚧 This repository is a placeholder for the upcoming BBC- Paired Authentic and Inpainted Reference (BBC-PAIR) dataset. Stay tuned!
 
 # 🚀 Release Timeline
 The release for this dataset will follow a month or so behind successful paper acceptance 

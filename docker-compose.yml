@@ -1,0 +1,16 @@
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: minimal-python-downloader:latest
+    container_name: minimal-python-downloader
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    # By default, run an interactive shell; override with `command:` or `docker compose run` args
+    tty: true
+    stdin_open: true
+    # Network is default bridge with internet access; can be overridden
+    # networks: [default]

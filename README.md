@@ -2,8 +2,7 @@
 🚧 This repository is a placeholder for the upcoming BBC - Paired Authentic and Inpainted References (BBC-PAIR) dataset. Stay tuned!
 
 ## Prerequisites
-- Docker Desktop installed and running on your machine.
-- This repo checked out locally. All commands assume you run them from the repo root; examples use generic command blocks (not shell-specific).
+- Docker
 
 ## Quick start
 1) Build the container image:
@@ -91,5 +90,6 @@ The licensing terms will be finalized and published prior to dataset release. We
 
 ## Contacts
 woody.bayliss@bbc.co.uk, juil.sock@bbc.co.uk, marc.gorrizblanch@bbc.co.uk
+
 
 

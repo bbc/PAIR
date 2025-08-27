@@ -10,7 +10,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Install basic networking tools for downloading
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-       ca-certificates curl wget bash \
+       ca-certificates curl wget bash dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user
@@ -35,7 +35,9 @@ RUN python -m pip install --upgrade pip \
 
 # Entrypoint that either runs the provided command or stays alive
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+# Normalize line endings just in case and ensure executable
+RUN dos2unix /usr/local/bin/entrypoint.sh || sed -i 's/\r$//' /usr/local/bin/entrypoint.sh \
+    && chmod +x /usr/local/bin/entrypoint.sh
 
 # Drop privileges
 USER ${USER}

@@ -1,26 +1,45 @@
+# 🚧 This repository is a placeholder for the upcoming BBC - Paired Authentic and Inpainted References (BBC-PAIR) dataset. Stay tuned!
 # BBC - PAIR (Paired Authentic and Inpainted References)
-🚧 This repository is a placeholder for the upcoming BBC - Paired Authentic and Inpainted References (BBC-PAIR) dataset. Stay tuned!
-
 ## Prerequisites
-- Docker
+#### <u>Docker</u>
+https://www.docker.com/
+#### <u> Username and password </u> 
+To access this dataset please visit https://bbc-pair.datasets.bbctest01.uk/data/index.html and follow the process there to recieve a username and password to facilitate downloading of the dataset
 
 ## Quick start
 1) Build the container image:
    - VS Code Task: “docker: build”
    - Or run in a terminal:
-```
-docker compose build
-```
+    ```
+    docker compose build
+    ```
 
-2) Run the full pipeline with the orchestrator:
-   - Replace the URL with the dataset base directory (not a file):
-```
-docker compose run --rm app python Client/Run_All.py --base-url https://<your-host>/<path-to-dataset> --percent 1 --clean partial
-```
+2) Set up authentication (choose one method):
+   - Environment variables (Linux/macOS):
+   ```bash
+   export PAIR_USERNAME=your_username
+   export PAIR_PASSWORD=your_password
+   ```
+   - Environment variables (PowerShell/Windows):
+   ```powershell
+   $env:PAIR_USERNAME="your_username"
+   $env:PAIR_PASSWORD="your_password"
+   ```
+   - Or pass credentials as command arguments (see examples below)
+
+3) Run the full pipeline with the orchestrator:
+   - With environment variables:
+   ```
+   docker compose run --rm app python Client/Run_All.py --percent 1 --clean partial
+   ```
+   - Or with command line credentials:
+   ```
+   docker compose run --rm app python Client/Run_All.py --percent 1 --clean partial --username your_username --password your_password
+   ```
 
 This will:
-- Download core files and the requested percent of archives plus the last_200 test set
-- Verify MD5s, extract archives, generate OpenV7 list, download Open Images, and reconstruct BBC_PAIR
+- Download core files and the requested percent of archives plus the last_200 test set from the BBC PAIR dataset
+- Verify MD5s, extract archives, generate OpenV7 list, download Open Images, and reconstruct BBC_PAIRed References)
 
 Outputs (by default) are created under the repo root:
 - `tars/` – downloaded files and trimmed JSON
@@ -46,25 +65,27 @@ If you pass a value that isn’t composable (e.g., 92), the downloader will erro
 
 ## Options and common scenarios
 
+**Note:** The dataset now defaults to the BBC PAIR URL. You can still override with `--base-url` if needed.
+
 - Partial vs full clean after reconstruction:
   - Partial (default): keeps tar files so you can reuse downloads on later runs
 ```
-docker compose run --rm app python Client/Run_All.py --base-url https://<host>/<path> --percent 5 --clean partial
+docker compose run --rm app python Client/Run_All.py --percent 5 --clean partial --username your_username --password your_password
 ```
   - Full: also removes tar files after success
 ```
-docker compose run --rm app python Client/Run_All.py --base-url https://<host>/<path> --percent 5 --clean full
+docker compose run --rm app python Client/Run_All.py --percent 5 --clean full --username your_username --password your_password
 ```
 
 - Override concurrency (downloader parallel workers):
 ```
-docker compose run --rm app python Client/Run_All.py --base-url https://<host>/<path> --percent 10 --clean partial --workers 6
+docker compose run --rm app python Client/Run_All.py --percent 10 --clean partial --workers 6 --username your_username --password your_password
 ```
 
 - Choose a different output location on the host:
   - By default, paths are created under the repo. You can choose another folder with `--root-dir`:
 ```
-docker compose run --rm app python Client/Run_All.py --base-url https://<host>/<path> --percent 1 --clean partial --root-dir ./runs/run1
+docker compose run --rm app python Client/Run_All.py --percent 1 --clean partial --root-dir ./runs/run1 --username your_username --password your_password
 ```
   - If the target is outside this repo, bind‑mount it into the container and then point `--root-dir` to that mount. One simple way is to temporarily add another volume in `docker-compose.yml`:
     - Edit the `app` service volumes and add a host path, e.g.: `- <absolute-host-path>:/host_data`
@@ -78,9 +99,37 @@ You can run each step individually if needed:
 - Reconstruct: `docker compose run --rm app python Client/Regenerate_Dataset.py --help`
 
 ## Troubleshooting
-- Ensure the base URL points to a directory that contains the expected files (PAIR_V1.json, PAIR_V1_HASHES.json, MD5SUMS.txt, split_*.tar.gz, last_200.tar.gz).
-- If you re-run with the same `--root-dir`, prefer `--clean partial` to reuse existing downloads.
-- For slow or flaky networks, consider retrying with a smaller `--percent` or lower `--workers`.
+- Ensure you have valid authentication credentials for the BBC PAIR dataset
+- If authentication fails, verify your username and password are correct
+- The default URL points to the BBC PAIR dataset at `https://bbc-pair.datasets.bbctest01.uk/data` which contains the expected files (PAIR_V1.json, PAIR_V1_HASHES.json, MD5SUMS.txt, split_*.tar.gz, last_200.tar.gz)
+- If you re-run with the same `--root-dir`, prefer `--clean partial` to reuse existing downloads
+- For slow or flaky networks, consider retrying with a smaller `--percent` or lower `--workers`
+
+## Testing Authentication
+You can test your credentials without downloading the full dataset:
+
+**Linux/macOS:**
+```bash
+# Test with environment variables
+export PAIR_USERNAME=your_username
+export PAIR_PASSWORD=your_password
+docker compose run --rm app python Client/Downloader.py --dest ./test --percent 0 --dry-run
+```
+
+**PowerShell/Windows:**
+```powershell
+# Test with environment variables
+$env:PAIR_USERNAME="your_username"
+$env:PAIR_PASSWORD="your_password"
+docker compose run --rm app python Client/Downloader.py --dest ./test --percent 0 --dry-run
+```
+
+**Any platform with command line arguments:**
+```bash
+docker compose run --rm app python Client/Downloader.py --dest ./test --percent 0 --dry-run --username your_username --password your_password
+```
+
+The `--dry-run` flag will show what would be downloaded without actually downloading anything.
 
 # 🚀 Release Timeline
 The release for this dataset will follow a month or so behind successful paper acceptance 

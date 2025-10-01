@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Dataset downloader for a static HTTP/HTTPS base URL exposing the dataset files.
+Dataset downloader for BBC PAIR dataset from bbc-pair.datasets.bbctest01.uk
 
 Features
 - Choose any percentage 0..100 that can be made from:
@@ -15,13 +15,20 @@ Features
         dest/checksums_report.json      (per-file MD5 verification results)
 
 Usage:
-    python 11Downloader_test.py \
-            --base-url https://your-host/path \
+    python Downloader.py \
             --dest /data/dataset \
-            --percent 37
+            --percent 37 \
+            --username your_username \
+            --password your_password
+
+    Or set credentials via environment variables:
+    export PAIR_USERNAME=your_username
+    export PAIR_PASSWORD=your_password
+    python Downloader.py --dest /data/dataset --percent 37
 
 Notes
-- --base-url is required and should NOT include the filename (ends at directory path).
+- The dataset is downloaded from bbc-pair.datasets.bbctest01.uk/data/ by default
+- Authentication is required. Provide via --username/--password or PAIR_USERNAME/PAIR_PASSWORD env vars
 - If PAIR_V1.json already exists in --dest, it will be reused to build trimmed output.
 """
 
@@ -37,6 +44,7 @@ from typing import Dict, List, Tuple
 import shutil
 import tarfile
 import requests
+from requests.auth import HTTPBasicAuth
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
@@ -44,6 +52,8 @@ import time
 # ----------------------------
 # Constants describing filenames available at the base URL
 # ----------------------------
+DEFAULT_BASE_URL = "https://bbc-pair.datasets.bbctest01.uk/data"
+
 CORE_FILES = [
     "PAIR_V1.json",
     "PAIR_V1_HASHES.json",
@@ -65,7 +75,7 @@ ALL_KNOWN_ARCHIVES = TEN_PCT_SPLITS + [s for (s, _) in LAST10_SPLITS_IN_ORDER] +
 # ----------------------------
 def download_one_http(base_url: str, name: str, dest_path: Path, overwrite: bool = False,
                       file_bar: tqdm | None = None, total_bar: tqdm | None = None,
-                      retries: int = 3, backoff: float = 2.0):
+                      retries: int = 3, backoff: float = 2.0, auth: HTTPBasicAuth | None = None):
     """Download a single file with retry + exponential backoff, updating bars.
 
     On each failed attempt (network error, non-200, size mismatch) retries until attempts exhausted.
@@ -93,7 +103,7 @@ def download_one_http(base_url: str, name: str, dest_path: Path, overwrite: bool
                     dest_path.unlink()
                 except Exception:
                     pass
-            with requests.get(url, stream=True, timeout=180) as r:
+            with requests.get(url, stream=True, timeout=180, auth=auth) as r:
                 if r.status_code != 200:
                     raise RuntimeError(f"HTTP {r.status_code}")
                 length = int(r.headers.get('Content-Length') or 0)
@@ -185,14 +195,14 @@ def safe_extract_tar(archive: Path, extract_root: Path, overwrite: bool = False,
 
 
 def parallel_download(base_url: str, names: List[str], dest: Path, overwrite: bool, workers: int,
-                      retries: int, backoff: float):
+                      retries: int, backoff: float, auth: HTTPBasicAuth | None = None):
     """Download files in parallel with overall and per-file byte progress bars."""
     # Pre-fetch sizes (HEAD) to compute overall total; ignore failures
     size_map: Dict[str, int] = {}
     session = requests.Session()
     for name in names:
         try:
-            resp = session.head(base_url.rstrip('/') + '/' + name, timeout=15, allow_redirects=True)
+            resp = session.head(base_url.rstrip('/') + '/' + name, timeout=15, allow_redirects=True, auth=auth)
             if resp.status_code == 200:
                 size = int(resp.headers.get('Content-Length') or 0)
                 if size > 0:
@@ -213,7 +223,7 @@ def parallel_download(base_url: str, names: List[str], dest: Path, overwrite: bo
     try:
         with ThreadPoolExecutor(max_workers=workers) as ex:
             future_map = {
-                ex.submit(download_one_http, base_url, name, dest / name, overwrite, file_bars[name], total_bar, retries, backoff): name
+                ex.submit(download_one_http, base_url, name, dest / name, overwrite, file_bars[name], total_bar, retries, backoff, auth): name
                 for name in names
             }
             for fut in as_completed(future_map):
@@ -432,10 +442,12 @@ def merge_intervals(intervals: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
 # Main routine
 # ----------------------------
 def main():
-    ap = argparse.ArgumentParser(description="Download composable dataset splits from a static HTTP/HTTPS base URL.")
-    ap.add_argument("--base-url", required=True, help="HTTP/HTTPS base URL where dataset files live (e.g. https://host/path). Do NOT include a filename.")
+    ap = argparse.ArgumentParser(description="Download composable dataset splits from BBC PAIR dataset.")
+    ap.add_argument("--base-url", default=DEFAULT_BASE_URL, help=f"HTTP/HTTPS base URL where dataset files live (default: {DEFAULT_BASE_URL}). Do NOT include a filename.")
     ap.add_argument("--dest", required=True, help="Destination directory on local filesystem.")
     ap.add_argument("--percent", type=int, required=True, help="Percentage (0..100) of the main dataset to download (test set last_200 is always included).")
+    ap.add_argument("--username", help="Username for authentication (can also use PAIR_USERNAME environment variable).")
+    ap.add_argument("--password", help="Password for authentication (can also use PAIR_PASSWORD environment variable).")
     ap.add_argument("--overwrite", action="store_true", help="Re-download files even if present.")
     ap.add_argument("--skip-md5", action="store_true", help="Skip MD5 verification against MD5SUMS.txt.")
     ap.add_argument("--dry-run", action="store_true", help="Print what would be downloaded and exit.")
@@ -445,6 +457,17 @@ def main():
     ap.add_argument("--download-retries", type=int, default=3, help="Retries per file on download failure (default: 3).")
     ap.add_argument("--retry-backoff", type=float, default=2.0, help="Initial seconds for exponential backoff (default: 2.0).")
     args = ap.parse_args()
+
+    # Handle authentication
+    username = args.username or os.getenv('PAIR_USERNAME')
+    password = args.password or os.getenv('PAIR_PASSWORD')
+    
+    if not username or not password:
+        print("ERROR: Authentication credentials required.", file=sys.stderr)
+        print("Provide --username and --password arguments or set PAIR_USERNAME and PAIR_PASSWORD environment variables.", file=sys.stderr)
+        sys.exit(1)
+    
+    auth = HTTPBasicAuth(username, password)
 
     dest = Path(args.dest).expanduser().resolve()
     dest.mkdir(parents=True, exist_ok=True)
@@ -484,7 +507,7 @@ def main():
             print("Fetching MD5SUMS.txt for pre-checks ...")
             download_one_http(
                 args.base_url, "MD5SUMS.txt", md5sums_path, args.overwrite,
-                None, None, args.download_retries, args.retry_backoff
+                None, None, args.download_retries, args.retry_backoff, auth
             )
             md5_map = parse_md5sums(md5sums_path.read_text(encoding="utf-8", errors="ignore"))
         except Exception as e:
@@ -509,7 +532,7 @@ def main():
         print("Downloading core files ...")
         _, core_errors = parallel_download(
             args.base_url, core_to_download, dest, args.overwrite,
-            max(1, min(args.workers, len(core_to_download))), args.download_retries, args.retry_backoff
+            max(1, min(args.workers, len(core_to_download))), args.download_retries, args.retry_backoff, auth
         )
     else:
         core_errors = []
@@ -549,7 +572,7 @@ def main():
         print("Downloading archive files ...")
         downloaded_archives, archive_errors = parallel_download(
             args.base_url, archives_to_download, dest, args.overwrite,
-            args.workers, args.download_retries, args.retry_backoff
+            args.workers, args.download_retries, args.retry_backoff, auth
         )
     else:
         downloaded_archives, archive_errors = [], []

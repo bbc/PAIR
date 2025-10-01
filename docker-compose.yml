@@ -9,6 +9,9 @@ services:
     working_dir: /workspace
     volumes:
       - ./:/workspace
+    environment:
+      - PAIR_USERNAME=${PAIR_USERNAME}
+      - PAIR_PASSWORD=${PAIR_PASSWORD}
     # By default, run an interactive shell; override with `command:` or `docker compose run` args
     tty: true
     stdin_open: true

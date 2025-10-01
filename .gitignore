@@ -3,3 +3,12 @@
 **/tars/**
 **/extracted/**
 .vscode
+
+# Environment files with credentials
+.env
+*.env
+!.env.example
+
+# Complied python code
+Client/__pycache__/Run_All.cpython-312.pyc
+src/__pycache__/Downloader.cpython-312.pyc

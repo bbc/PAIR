@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
 Wrapper to run the 4-step pipeline back-to-back:
-    1) Downloader (Downloader_test.py)
+    1) Downloader (Downloader.py)
     2) OpenV7 list creator (OpenV7_List_Creator.py)
     3) OpenV7 downloader (OpenV7_Downloader.py)
     4) Dataset regeneration (Regenerate_Dataset.py)
 
 Options:
-- --base-url (required)
 - --percent (required)
+- --username and --password (or use PAIR_USERNAME/PAIR_PASSWORD environment variables)
+- --base-url (optional, defaults to BBC PAIR dataset URL)
 - --clean [partial|full] (default: partial)
 - --root-dir PATH (default: current working directory)
 
@@ -44,8 +45,10 @@ def main():
     )
 
     ap = argparse.ArgumentParser(description="Run full pipeline with simple flags")
-    ap.add_argument("--base-url", required=True, help="HTTP/HTTPS base URL of the dataset host (directory path, no filename)")
+    ap.add_argument("--base-url", default="https://bbc-pair.datasets.bbctest01.uk/data", help="HTTP/HTTPS base URL of the dataset host (defaults to BBC PAIR dataset)")
     ap.add_argument("--percent", required=True, type=int, help="Percentage (0..100) of main dataset to download")
+    ap.add_argument("--username", help="Username for authentication (can also use PAIR_USERNAME environment variable)")
+    ap.add_argument("--password", help="Password for authentication (can also use PAIR_PASSWORD environment variable)")
     ap.add_argument("--clean", choices=["partial", "full"], default="partial", help="Cleanup mode: partial keeps tar files; full removes tar files")
     ap.add_argument("--root-dir", default=str(Path.cwd()), help="Root directory for outputs (tars, extracted, OpenV7_Originals, BBC_PAIR)")
     ap.add_argument("--workers", type=int, default=None, help="Override downloader parallelism (default: script’s default)")
@@ -72,6 +75,13 @@ def main():
         "--extract-dest", str(extracted),
         "--percent", str(args.percent),
     ]
+    
+    # Add authentication
+    if args.username:
+        dl_cmd += ["--username", args.username]
+    if args.password:
+        dl_cmd += ["--password", args.password]
+    
     if args.workers is not None:
         dl_cmd += ["--workers", str(args.workers)]
     run_step("Step 1/4: Download splits", dl_cmd)
@@ -116,10 +126,7 @@ def main():
 
     # Outro ASCII banner
     print(
-        "\n" +
-        "+------------------------------------------+\n"
-        "|   Make cathedrals not churches          |\n"
-        "+------------------------------------------+\n"
+        "To have exploited so great a scientific invention for the purpose and pursuit of 'entertainment' alone would have been a prostitution of its powers and an insult to the character and intelligence of the people - John Reith"
     )
 
 

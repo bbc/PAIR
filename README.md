@@ -131,6 +131,38 @@ docker compose run --rm app python Client/Downloader.py --dest ./test --percent 
 
 The `--dry-run` flag will show what would be downloaded without actually downloading anything.
 
+## Quick PyTorch DataLoader example (optional)
+If you only want to try loading a small batch from the reconstructed dataset using PyTorch, there's a minimal example under `example_data_loader/` that is intentionally separate from the main repo requirements.
+
+Windows PowerShell quickstart:
+
+1. Create and activate a virtual environment
+  ```powershell
+  cd example_data_loader
+  python -m venv .venv
+  .\.venv\Scripts\Activate.ps1
+  ```
+
+2. Install minimal deps for the example
+  ```powershell
+  pip install -r requirements-example.txt
+  ```
+
+3. Point the example to your data paths (adjust if needed)
+  ```powershell
+  $env:BBC_PAIR_JSON="\path\to\BBC_PAIR.json"
+  $env:BBC_PAIR_IMAGES="\path\to\BBC_PAIR"
+  ```
+
+4. Run the example
+  ```powershell
+  python pytorch_dataloader_example.py
+  ```
+
+Notes:
+- The example will report the dataset size, build a single batch, and print the tensor shape and a few sample fields.
+- `requirements-example.txt` is intentionally minimal and not used by the main pipeline.
+
 # 🚀 Release Timeline
 The release for this dataset will follow a month or so behind successful paper acceptance 
 

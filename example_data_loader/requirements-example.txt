@@ -1,0 +1,15 @@
+# Minimal dependencies for the example_data_loader only
+# This is NOT the main repo requirements. Use this to quickly try the PyTorch
+# DataLoader example without installing extra packages.
+
+# Core deps
+pillow>=10.0
+numpy>=1.26
+matplotlib>=3.7
+
+# PyTorch CPU by default; install GPU-specific wheels separately if desired.
+torch>=2.0
+
+# Optional: torchvision enables standard transforms (Resize/CenterCrop/etc.).
+# If omitted, the dataset falls back to a simple PIL->Tensor conversion.
+# torchvision>=0.15

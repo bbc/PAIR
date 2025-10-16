@@ -13,7 +13,7 @@ RUN apt-get update \
        ca-certificates curl wget bash dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user
+# Create a non-root user; UID/GID can be passed at build time (see docker-compose.yml)
 ARG USER=appuser
 ARG UID=1000
 ARG GID=1000

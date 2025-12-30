@@ -13,6 +13,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# Modified by Woody Bayliss @ BBC in 2025.
+# This file was originally obtained from https://raw.githubusercontent.com/openimages/dataset/master/downloader.py in 2025 and edited to suit the purposes of the BBC-PAIR dataset.
+
+
 """Open Images image downloader.
 
 This script downloads a subset of Open Images images, given a list of image ids.
@@ -121,5 +126,6 @@ if __name__ == '__main__':
   parser.add_argument('--openv7-download-folder', default="OpenV7_Originals",
                         help='Folder for OpenV7 images.')
   download_all_images(vars(parser.parse_args()))
+
 
 # python downloader.py train_images.txt --download_folder=/data/OpenV7_Originals/

@@ -1,10 +1,9 @@
-# 🚧 This repository is a placeholder for the upcoming BBC - Paired Authentic and Inpainted References (BBC-PAIR) dataset. Stay tuned!
-# BBC - PAIR (Paired Authentic and Inpainted References)
+# BBC - PAIR (Paired Authentic and Inpainted References) DATASET DOWNLOADER
 ## Prerequisites
 #### <u>Docker</u>
 https://www.docker.com/
 #### <u> Username and password </u> 
-To access this dataset please visit https://bbc-pair.datasets.bbctest01.uk/data/index.html and follow the process there to recieve a username and password to facilitate downloading of the dataset
+To access this dataset please visit https://bbc-pair.datasets.bbctest01.uk/ and follow the process there to recieve a username and password to facilitate downloading of the dataset
 
 ## Quick start
 1) Build the container image:

@@ -124,9 +124,10 @@ def main():
     print("\nAll steps completed successfully.")
     print(f"Output dataset: {outdir}")
 
+    print("\n")
     # Outro ASCII banner
     print(
-        "To have exploited so great a scientific invention for the purpose and pursuit of 'entertainment' alone would have been a prostitution of its powers and an insult to the character and intelligence of the people - John Reith"
+        "\"To have exploited so great a scientific invention for the purpose and pursuit of 'entertainment' alone would have been a prostitution of its powers and an insult to the character and intelligence of the people\" - John Reith"
     )
 
 

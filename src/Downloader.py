@@ -84,10 +84,10 @@ def download_one_http(base_url: str, name: str, dest_path: Path, overwrite: bool
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     url = base_url.rstrip('/') + '/' + name
     if dest_path.exists() and not overwrite:
-        if file_bar and file_bar.total and file_bar.n < file_bar.total:
+        if file_bar is not None and file_bar.total is not None and file_bar.n < file_bar.total:
             remaining = file_bar.total - file_bar.n
             file_bar.update(remaining)
-            if total_bar:
+            if total_bar is not None:
                 total_bar.update(remaining)
         return name
 
@@ -107,7 +107,7 @@ def download_one_http(base_url: str, name: str, dest_path: Path, overwrite: bool
                 if r.status_code != 200:
                     raise RuntimeError(f"HTTP {r.status_code}")
                 length = int(r.headers.get('Content-Length') or 0)
-                if file_bar and length and (file_bar.total is None):
+                if file_bar is not None and length and (file_bar.total is None):
                     file_bar.total = length
                 written = 0
                 with dest_path.open('wb') as f:
@@ -116,16 +116,16 @@ def download_one_http(base_url: str, name: str, dest_path: Path, overwrite: bool
                             continue
                         f.write(chunk)
                         written += len(chunk)
-                        if file_bar:
+                        if file_bar is not None:
                             file_bar.update(len(chunk))
-                        if total_bar:
+                        if total_bar is not None:
                             total_bar.update(len(chunk))
                 if length and written != length:
                     raise RuntimeError(f"Size mismatch wrote {written} expected {length}")
-                if file_bar and file_bar.total and file_bar.n < file_bar.total:
+                if file_bar is not None and file_bar.total is not None and file_bar.n < file_bar.total:
                     delta = file_bar.total - file_bar.n
                     file_bar.update(delta)
-                    if total_bar:
+                    if total_bar is not None:
                         total_bar.update(delta)
                 return name
         except Exception as e:  # noqa: BLE001
@@ -143,11 +143,44 @@ def safe_extract_tar(archive: Path, extract_root: Path, overwrite: bool = False,
     Guards against path traversal; returns archive name.
     """
     extract_root.mkdir(parents=True, exist_ok=True)
-    processed = 0
+
+    class ProgressFileReader:
+        def __init__(self, path, f_bar, t_bar):
+            self.f = open(path, 'rb')
+            self.f_bar = f_bar
+            self.t_bar = t_bar
+            self.last_pos = 0
+
+        def read(self, size=-1):
+            data = self.f.read(size)
+            curr = self.f.tell()
+            delta = curr - self.last_pos
+            if delta > 0:
+                if self.f_bar is not None: self.f_bar.update(delta)
+                if self.t_bar is not None: self.t_bar.update(delta)
+                self.last_pos = curr
+            return data
+
+        def seek(self, offset, whence=0):
+            res = self.f.seek(offset, whence)
+            curr = self.f.tell()
+            delta = curr - self.last_pos
+            if delta > 0:
+                if self.f_bar is not None: self.f_bar.update(delta)
+                if self.t_bar is not None: self.t_bar.update(delta)
+            self.last_pos = curr
+            return res
+
+        def tell(self):
+            return self.f.tell()
+
+        def close(self):
+            self.f.close()
+
     try:
-        with tarfile.open(archive, 'r:gz') as tf:
-            members = tf.getmembers()
-            for m in members:
+        prog_file = ProgressFileReader(archive, file_bar, total_bar)
+        with tarfile.open(fileobj=prog_file, mode='r:gz') as tf:
+            for m in tf:
                 # Normalize relative path
                 rel_name = m.name.lstrip('./')
                 parts = rel_name.split('/')
@@ -155,11 +188,6 @@ def safe_extract_tar(archive: Path, extract_root: Path, overwrite: bool = False,
                     parts = parts[2:]
                 rel_name = '/'.join([p for p in parts if p not in ('', '.')])
                 if not rel_name:
-                    processed += 1
-                    if file_bar:
-                        file_bar.update(1)
-                    if total_bar:
-                        total_bar.update(1)
                     continue
                 if any(p == '..' for p in parts):
                     raise RuntimeError(f"Blocked path traversal component in {archive.name}: {m.name}")
@@ -178,18 +206,13 @@ def safe_extract_tar(archive: Path, extract_root: Path, overwrite: bool = False,
                         if src is not None:
                             with src, open(target_path, 'wb') as out_f:
                                 shutil.copyfileobj(src, out_f)
-                processed += 1
-                if file_bar:
-                    file_bar.update(1)
-                if total_bar:
-                    total_bar.update(1)
         # Complete bar if something left (shouldn't typically happen)
-        if file_bar and file_bar.total and file_bar.n < file_bar.total:
+        if file_bar is not None and file_bar.total is not None and file_bar.n < file_bar.total:
             file_bar.update(file_bar.total - file_bar.n)
         return archive.name
     except Exception as e:
         # Ensure bars still move to completion to avoid hang in UI
-        if file_bar and file_bar.total and file_bar.n < file_bar.total:
+        if file_bar is not None and file_bar.total is not None and file_bar.n < file_bar.total:
             file_bar.update(file_bar.total - file_bar.n)
         raise RuntimeError(f"Failed to extract {archive}: {e}")
 
@@ -242,22 +265,16 @@ def parallel_download(base_url: str, names: List[str], dest: Path, overwrite: bo
 
 
 def parallel_extract(archives: List[Path], extract_dest: Path, overwrite: bool, workers: int):
-    """Parallel extract with overall (files) and per-archive progress bars."""
-    # Pre-scan to count members for each archive
-    member_counts: Dict[str, int] = {}
-    for p in archives:
-        try:
-            with tarfile.open(p, 'r:gz') as tf:
-                member_counts[p.name] = len(tf.getmembers())
-        except Exception:
-            member_counts[p.name] = 0
-    total_files = sum(member_counts.values()) or None
+    """Parallel extract with overall and per-archive byte-based progress bars."""
+    sizes = {p.name: p.stat().st_size for p in archives if p.exists()}
+    total_bytes = sum(sizes.values())
 
-    # Overall bar (files) position 0, per-archive bars subsequent
-    overall_bar = tqdm(total=total_files, desc="Extract Total", unit='file', position=0)
+    # Overall bar (bytes) position 0, per-archive bars subsequent
+    overall_bar = tqdm(total=total_bytes, desc="Extract Total", unit='B', unit_scale=True, unit_divisor=1024, position=0)
     archive_bars: Dict[str, tqdm] = {}
     for idx, p in enumerate(archives, start=1):
-        archive_bars[p.name] = tqdm(total=member_counts.get(p.name), desc=f"{p.name}", unit='file', position=idx, leave=False)
+        size = sizes.get(p.name, 0)
+        archive_bars[p.name] = tqdm(total=size, desc=f"{p.name}", unit='B', unit_scale=True, unit_divisor=1024, position=idx, leave=False)
 
     results = []
     errors = []

@@ -1,0 +1,26 @@
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Build the image with a user matching the host when provided; defaults keep compatibility
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    image: minimal-python-downloader:latest
+    container_name: minimal-python-downloader
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    environment:
+      - PAIR_USERNAME=${PAIR_USERNAME}
+      - PAIR_PASSWORD=${PAIR_PASSWORD}
+      - HOME=/workspace
+    # By default, run an interactive shell; override with `command:` or `docker compose run` args
+    tty: true
+    stdin_open: true
+    # Run as the same user as the host when provided, else fall back to root to avoid permission issues on bind mounts
+    user: "${UID:-0}:${GID:-0}"
+    # Network is default bridge with internet access; can be overridden
+    # networks: [default]

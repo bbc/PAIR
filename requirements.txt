@@ -1,0 +1,6 @@
+requests==2.32.4
+tqdm==4.67.1
+boto3==1.39.12
+botocore==1.39.12
+pillow==11.3.0
+numpy==2.3.1

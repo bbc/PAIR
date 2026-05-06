@@ -1,0 +1,6 @@
+# Ensure shell scripts use LF endings to avoid /usr/bin/env bash\r errors in Linux containers
+*.sh text eol=lf
+entrypoint.sh text eol=lf
+
+# Normalize text files; let Git handle line endings consistently
+* text=auto

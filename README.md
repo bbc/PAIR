@@ -4,7 +4,8 @@
 https://www.docker.com/
 #### <u> Username and password </u> 
 To access this dataset please visit https://bbc-pair.datasets.bbctest01.uk/ and follow the process there to recieve a username and password to facilitate downloading of the dataset
-
+#### <u> Dataset information </u>
+The download process will take a while, in the meantime familiarise yourself with the dataset [here](https://bbc-pair.datasets.bbctest01.uk/dataset_information.html) 
 ## Quick start
 1) Build the container image:
    - VS Code Task: “docker: build”
@@ -162,11 +163,8 @@ Notes:
 - The example will report the dataset size, build a single batch, and print the tensor shape and a few sample fields.
 - `requirements-example.txt` is intentionally minimal and not used by the main pipeline.
 
-# 🚀 Release Timeline
-The release for this dataset will follow a month or so behind successful paper acceptance 
-
 # 📜 License
-The licensing terms will be finalized and published prior to dataset release. We aim to make the dataset available for academic and non-commercial research purposes.
+Please visit <https://bbc-pair.datasets.bbctest01.uk/> to see information with respect to licencing
 
 ## Contacts
 woody.bayliss@bbc.co.uk, juil.sock@bbc.co.uk, marc.gorrizblanch@bbc.co.uk

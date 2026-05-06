@@ -136,7 +136,7 @@ def download_one_http(base_url: str, name: str, dest_path: Path, overwrite: bool
 
 
 def safe_extract_tar(archive: Path, extract_root: Path, overwrite: bool = False,
-                     file_bar: tqdm | None = None, total_bar: tqdm | None = None):
+                     file_bar: tqdm | None = None, total_bar: tqdm | None = None, quickclean: bool = False):
     """Extract a .tar.gz archive to extract_root updating per-archive and overall bars.
 
     Strips leading 'data/BBC_PAIR_DIFF/' so extracted structure is flattened.
@@ -209,6 +209,13 @@ def safe_extract_tar(archive: Path, extract_root: Path, overwrite: bool = False,
         # Complete bar if something left (shouldn't typically happen)
         if file_bar is not None and file_bar.total is not None and file_bar.n < file_bar.total:
             file_bar.update(file_bar.total - file_bar.n)
+            
+        if quickclean:
+            try:
+                archive.unlink()
+            except Exception as e:
+                print(f"\nFailed to quickclean {archive.name}: {e}", file=sys.stderr)
+                
         return archive.name
     except Exception as e:
         # Ensure bars still move to completion to avoid hang in UI
@@ -264,7 +271,7 @@ def parallel_download(base_url: str, names: List[str], dest: Path, overwrite: bo
     return results, errors
 
 
-def parallel_extract(archives: List[Path], extract_dest: Path, overwrite: bool, workers: int):
+def parallel_extract(archives: List[Path], extract_dest: Path, overwrite: bool, workers: int, quickclean: bool = False):
     """Parallel extract with overall and per-archive byte-based progress bars."""
     sizes = {p.name: p.stat().st_size for p in archives if p.exists()}
     total_bytes = sum(sizes.values())
@@ -281,7 +288,7 @@ def parallel_extract(archives: List[Path], extract_dest: Path, overwrite: bool, 
     try:
         with ThreadPoolExecutor(max_workers=workers) as ex:
             future_map = {
-                ex.submit(safe_extract_tar, p, extract_dest, overwrite, archive_bars[p.name], overall_bar): p.name
+                ex.submit(safe_extract_tar, p, extract_dest, overwrite, archive_bars[p.name], overall_bar, quickclean): p.name
                 for p in archives
             }
             for fut in as_completed(future_map):
@@ -470,6 +477,7 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="Print what would be downloaded and exit.")
     ap.add_argument("--extract-dest", help="Directory where archives will be extracted (default: <dest>/extracted).")
     ap.add_argument("--no-extract", action="store_true", help="Skip extracting .tar.gz archives after download.")
+    ap.add_argument("--quickclean", action="store_true", help="Remove tar archives immediately after successful extraction.")
     ap.add_argument("--workers", type=int, default=3, help="Parallel worker threads for download/extract (default: 3).")
     ap.add_argument("--download-retries", type=int, default=3, help="Retries per file on download failure (default: 3).")
     ap.add_argument("--retry-backoff", type=float, default=2.0, help="Initial seconds for exponential backoff (default: 2.0).")
@@ -647,7 +655,7 @@ def main():
     if not args.no_extract:
         print(f"Extracting archives to {extract_dest} ... It's normal for this to take a while and appear to freeze.")
         archive_paths = [dest / n for n in archives_to_get if n.endswith('.tar.gz') and (dest / n).exists()]
-        extracted, extract_errors = parallel_extract(archive_paths, extract_dest, args.overwrite, args.workers)
+        extracted, extract_errors = parallel_extract(archive_paths, extract_dest, args.overwrite, args.workers, args.quickclean)
         extracted_archives.extend(extracted)
         for name, err in extract_errors:
             print(f"ERROR extracting {name}: {err}", file=sys.stderr)

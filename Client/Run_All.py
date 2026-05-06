@@ -50,6 +50,7 @@ def main():
     ap.add_argument("--username", help="Username for authentication (can also use PAIR_USERNAME environment variable)")
     ap.add_argument("--password", help="Password for authentication (can also use PAIR_PASSWORD environment variable)")
     ap.add_argument("--clean", choices=["partial", "full"], default="partial", help="Cleanup mode: partial keeps tar files; full removes tar files")
+    ap.add_argument("--quickclean", action="store_true", help="Remove tar files immediately after their extraction to save disk space")
     ap.add_argument("--root-dir", default=str(Path.cwd()), help="Root directory for outputs (tars, extracted, OpenV7_Originals, BBC_PAIR)")
     ap.add_argument("--workers", type=int, default=None, help="Override downloader parallelism (default: script’s default)")
     args = ap.parse_args()
@@ -84,6 +85,8 @@ def main():
     
     if args.workers is not None:
         dl_cmd += ["--workers", str(args.workers)]
+    if args.quickclean:
+        dl_cmd += ["--quickclean"]
     run_step("Step 1/4: Download splits", dl_cmd)
 
     # 2) List creator

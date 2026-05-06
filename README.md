@@ -5,7 +5,10 @@ https://www.docker.com/
 #### <u> Username and password </u> 
 To access this dataset please visit https://bbc-pair.datasets.bbctest01.uk/ and follow the process there to recieve a username and password to facilitate downloading of the dataset
 #### <u> Dataset information </u>
-The download process will take a while, in the meantime familiarise yourself with the dataset [here](https://bbc-pair.datasets.bbctest01.uk/dataset_information.html) 
+The download process will take a while, in the meantime familiarise yourself with the dataset [here](https://bbc-pair.datasets.bbctest01.uk/dataset_information.html). <br> 
+If downloading the full dataset you will need 1.2TB of storage space available. The final dataset will only take up 450GB but the reconstruction process requires more space. <br> 
+You can add --quickclean when calling Run_All.py to reduce this by 500GB (down to 600GB total) but be warned this removes tar files as soon as extraction is complete.
+
 ## Quick start
 1) Build the container image:
    - VS Code Task: “docker: build”
@@ -27,7 +30,7 @@ The download process will take a while, in the meantime familiarise yourself wit
    ```
    - Or pass credentials as command arguments (see examples below)
 
-3) Run the full pipeline with the orchestrator:
+3) Run the full pipeline with the orchestrator to download 1% of the dataset:
    - With environment variables:
    ```
    docker compose run --rm app python Client/Run_All.py --percent 1 --clean partial
@@ -36,6 +39,8 @@ The download process will take a while, in the meantime familiarise yourself wit
    ```
    docker compose run --rm app python Client/Run_All.py --percent 1 --clean partial --username your_username --password your_password
    ```
+   Optionally add --quickclean to the command to immediately clear the tar files when downloading larger portions of the dataset.
+
 
 This will:
 - Download core files and the requested percent of archives plus the last_200 test set from the BBC PAIR dataset
@@ -65,7 +70,7 @@ If you pass a value that isn’t composable (e.g., 92), the downloader will erro
 
 ## Options and common scenarios
 
-**Note:** The dataset now defaults to the BBC PAIR URL. You can still override with `--base-url` if needed.
+**Note:** The dataset is very large due to having to reconstruct images **Optionally add --quickclean to the command to immediately clear the tar files when downloading larger portions of the dataset.**
 
 - Partial vs full clean after reconstruction:
   - Partial (default): keeps tar files so you can reuse downloads on later runs

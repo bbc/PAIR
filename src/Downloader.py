@@ -449,7 +449,7 @@ def main():
     ap.add_argument("--username", help="Username for authentication (can also use PAIR_USERNAME environment variable).")
     ap.add_argument("--password", help="Password for authentication (can also use PAIR_PASSWORD environment variable).")
     ap.add_argument("--overwrite", action="store_true", help="Re-download files even if present.")
-    ap.add_argument("--skip-md5", action="store_true", help="Skip MD5 verification against MD5SUMS.txt.")
+    ap.add_argument("--verify-md5", action="store_true", help="Perform MD5 verification against MD5SUMS.txt (skipped by default).")
     ap.add_argument("--dry-run", action="store_true", help="Print what would be downloaded and exit.")
     ap.add_argument("--extract-dest", help="Directory where archives will be extracted (default: <dest>/extracted).")
     ap.add_argument("--no-extract", action="store_true", help="Skip extracting .tar.gz archives after download.")
@@ -516,8 +516,12 @@ def main():
 
     def has_valid_md5(name: str) -> bool:
         local = dest / name
+        if not local.exists():
+            return False
+        if not args.verify_md5:
+            return True
         expected = md5_map.get(name)
-        if not local.exists() or not expected:
+        if not expected:
             return False
         try:
             return md5_file(local) == expected
@@ -586,7 +590,7 @@ def main():
 
     # 7) Verify MD5s (optional) BEFORE extraction so we avoid wasting time on corrupt archives.
     checksums_report = {}
-    if not args.skip_md5:
+    if args.verify_md5:
         print("Verifying MD5 checksums ...")
         md5sums_text = (dest / "MD5SUMS.txt").read_text(encoding="utf-8", errors="ignore")
         md5_map = parse_md5sums(md5sums_text)
@@ -600,12 +604,19 @@ def main():
             if not expected:
                 checksums_report[name] = {"status": "no_expected_md5"}
                 continue
-            actual = md5_file(local)
-            checksums_report[name] = {
-                "status": "ok" if actual == expected else "mismatch",
-                "expected_md5": expected,
-                "actual_md5": actual,
-            }
+            
+            if has_valid_md5(name):
+                checksums_report[name] = {
+                    "status": "ok",
+                    "expected_md5": expected,
+                    "actual_md5": expected,
+                }
+            else:
+                checksums_report[name] = {
+                    "status": "mismatch",
+                    "expected_md5": expected,
+                    "actual_md5": md5_file(local),
+                }
         with (dest / "checksums_report.json").open("w", encoding="utf-8") as f:
             json.dump(checksums_report, f, indent=2)
 
@@ -660,7 +671,7 @@ def main():
         "note": "The requested percent applies to the main dataset. The last_200 test set is always included in addition.",
         "archives_downloaded": archives_to_get,
         "core_files_downloaded": core_files_to_get,
-        "md5_verification": (not args.skip_md5),
+        "md5_verification": args.verify_md5,
         "ranges_by_archive": {k: {"start": v[0], "end": v[1], "count": max(0, v[1]-v[0])} for k, v in ranges.items()},
         "selected_index_intervals": [{"start": s, "end": e} for (s, e) in merged_for_info],
         "counts": {
@@ -687,7 +698,7 @@ def main():
     print("\nDone.")
     print(f"- Saved trimmed JSON: {trimmed_path}")
     print(f"- Saved manifest:     {dest / 'manifest.json'}")
-    if not args.skip_md5:
+    if args.verify_md5:
         print(f"- Checksums report:   {dest / 'checksums_report.json'}")
     print(f"- Archives fetched:   {', '.join(archives_to_get)}")
     if not args.no_extract:

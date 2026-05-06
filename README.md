@@ -5,8 +5,10 @@ https://www.docker.com/
 #### <u> Username and password </u> 
 To access this dataset please visit https://bbc-pair.datasets.bbctest01.uk/ and follow the process there to recieve a username and password to facilitate downloading of the dataset
 #### <u> Dataset information </u>
-The download process will take a while, in the meantime familiarise yourself with the dataset [here](https://bbc-pair.datasets.bbctest01.uk/dataset_information.html). <br> 
-If downloading the full dataset you will need 1.2TB of storage space available. The final dataset will only take up 450GB but the reconstruction process requires more space. <br> 
+The download process will take a while, in the meantime familiarise yourself with the dataset [here](https://bbc-pair.datasets.bbctest01.uk/dataset_information.html).
+
+If downloading the full dataset you will need 1.2TB of storage space available. The final dataset will only take up 450GB but the reconstruction process requires more space.
+
 You can add --quickclean when calling Run_All.py to reduce this by 500GB (down to 600GB total) but be warned this removes tar files as soon as extraction is complete.
 
 ## Quick start

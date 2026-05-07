@@ -11,7 +11,7 @@ If downloading the full dataset you will need 1.2TB of storage space available. 
 
 You can add --quickclean when calling Run_All.py to reduce this by 500GB (down to 600GB total) but be warned this removes tar files as soon as extraction is complete.
 
-After downloading the dataset you will have a file called BBC_PAIR.json, which will specify an "image_number" for each entry. **The last 200 entries will always corelate with the test set used in https://arxiv.org/abs/2506.05466**.
+After downloading the dataset you will have a file called BBC_PAIR.json, which will specify an "image_number" for each entry. **The last 200 entries will always corelate with the test set used in https://arxiv.org/abs/2506.05466**. Specifcally these will be the "image_number" entries from 15000 to 15199.
 
 ## Quick start
 1) Build the container image:

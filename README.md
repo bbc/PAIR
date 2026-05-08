@@ -1,4 +1,5 @@
 # BBC - PAIR (Paired Authentic and Inpainted References) DATASET DOWNLOADER
+This repository contains the BBC-PAIR dataset introduced in the paper *Towards Reliable Identification of Diffusion-based Image Manipulations* (NeurIPS 2025).
 ## Prerequisites
 #### <u>Docker</u>
 https://www.docker.com/

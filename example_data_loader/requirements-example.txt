@@ -3,7 +3,7 @@
 # DataLoader example without installing extra packages.
 
 # Core deps
-pillow>=10.0
+pillow>=12.2.0
 numpy>=1.26
 matplotlib>=3.7
 

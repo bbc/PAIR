@@ -176,8 +176,8 @@ Notes:
 # 📜 License
 Please visit <https://bbc-pair.datasets.bbctest01.uk/> to see information with respect to licencing
 
-## Contacts
-woody.bayliss@bbc.co.uk, juil.sock@bbc.co.uk, marc.gorrizblanch@bbc.co.uk
+## Contact
+bbc-pair@bbc.co.uk
 
 
 
